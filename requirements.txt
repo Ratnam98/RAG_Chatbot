@@ -11,7 +11,3 @@ faiss-cpu==1.7.4
 sentence-transformers
 PyAudio
 SpeechRecognition
-
-#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
-
-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
