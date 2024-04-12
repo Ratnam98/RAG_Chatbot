@@ -124,6 +124,7 @@ def vectorstores(chunks):
     vector=Qdrant.from_documents(documents=chunks,url=url,embedding=embeddings,prefer_grpc=False,collection_name=collection_name)
     return vector
 
+@st.cache(ttl=24*3600)
 def get_conversation_chain(vector):
     memory=ConversationBufferMemory(memory_key='chat_history',return_messages=True)
     conversation_chain=ConversationalRetrievalChain.from_llm(
@@ -132,27 +133,6 @@ def get_conversation_chain(vector):
     get_chat_history=lambda h:h,
     memory=memory)
     return conversation_chain
-
-# def speak_answer(answer):
-#     engine = pyttsx3.init()
-#     engine.say(answer)
-#     engine.runAndWait()
-
-# def get_audio_input():
-#     recognizer=sr.Recognizer()
-#     with sr.Microphone() as source:
-#         st.write("Listening...")
-#         recognizer.adjust_for_ambient_noise(source)
-#         audio=recognizer.listen(source,timeout=5)
-#         st.write("Processing Your Audio")
-    
-#     try:
-#         user_query=recognizer.recognize_google(audio)
-#         return user_query
-#     except sr.UnknownValueError:
-#         return "Sorry , I didn't understand that. Please Speak Again"
-#     except sr.UnknownValueError as e:
-#         return f"Speech Recoginition request failed: {str(e)}"
 
 user_uploads=st.file_uploader("Upload Your File Here",accept_multiple_files=True)
 if user_uploads is not None:
