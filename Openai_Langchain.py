@@ -123,7 +123,7 @@ def vectorstores(chunks):
     embeddings=HuggingFaceBgeEmbeddings(model_name=model_name,model_kwargs=model_kwargs,encode_kwargs=encode_kwargs)
     url="http://localhost:6333"
     collection_name="gpt_db1"
-    vector=Qdrant.from_documents(documents=chunks,url=url,embedding=embeddings,prefer_grpc=False,collection_name=collection_name)
+    vector=Qdrant.from_texts(documents=chunks,url=url,embedding=embeddings,prefer_grpc=False,collection_name=collection_name)
     return vector
 
 @st.cache(ttl=24*3600)
