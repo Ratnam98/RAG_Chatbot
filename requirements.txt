@@ -9,5 +9,4 @@ tiktoken==0.4.0
 sentence-transformers==2.5.1
 PyAudio
 SpeechRecognition
-qdrant
 qdrant-client
