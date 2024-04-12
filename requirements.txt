@@ -7,6 +7,5 @@ pypdf2
 html2text==2020.1.16
 tiktoken==0.4.0
 sentence-transformers==2.5.1
-PyAudio
 SpeechRecognition
 qdrant-client
