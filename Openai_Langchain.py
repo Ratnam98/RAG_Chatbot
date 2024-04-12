@@ -1,18 +1,16 @@
 import streamlit as st
 import pandas as pd
 from PyPDF2 import PdfReader
-from langchain.embeddings import OpenAIEmbeddings,SentenceTransformerEmbeddings
+from langchain.embeddings import OpenAIEmbeddings,SentenceTransformerEmbeddings,HuggingFaceBgeEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import RetrievalQAWithSourcesChain,RetrievalQA, ConversationalRetrievalChain
-from langchain.vectorstores import FAISS
-from langchain.document_loaders import PyPDFLoader
+from langchain.vectorstores import FAISS , Qdrant
+from qdrant_client import QdrantClient
+from langchain.document_loaders import PyPDFLoader 
 import speech_recognition as sr
-import pyttsx3
-import pyaudio
-from docx import Document
-
+import pyttsx3 ,pyaudio
 
 home_privacy = "We value and respect your privacy. To safeguard your personal details, we utilize the hashed value of your OpenAI API Key, ensuring utmost confidentiality and anonymity. Your API key facilitates AI-driven features during your session and is never retained post-visit. You can confidently fine-tune your research, assured that your information remains protected and private."
 st.set_page_config(
@@ -22,13 +20,25 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-attachment: fixed;
+        background-size: cover;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.sidebar.subheader("Setup")
 OPENAI_API_KEY=st.sidebar.text_input("Enter Your API KEY HERE:",type="password")
 st.sidebar.markdown("Get your API key from [here](https://platform.openai.com/account/api-keys)")
 st.sidebar.divider()
 st.sidebar.subheader("Model Selection")
 llm_model_options=['gpt-3.5-turbo', 'gpt-3.5-turbo-16k','gpt-4']
-model_select=st.sidebar.selectbox('Select LLM Model:',llm_model_options,index=0)
+model_select=st.sidebar.selectbox('Select LLM Model:',llm_model_options,index=2)
 chain_type_options=['stuff', 'map_reduce', "refine", "map_rerank"]
 chain_select=st.sidebar.selectbox('Select Chain Type:',chain_type_options,index=0)
 st.sidebar.markdown("""\n""")
@@ -41,7 +51,7 @@ with st.sidebar:
     st.subheader("Limitations:", anchor=False)
     st.info(
         """
-        - Currently only supports PDFs. 
+        - Currently only supports Structured PDFs only. 
         """)
     st.divider()
     
@@ -103,9 +113,17 @@ def get_chunks(text):
     chunks=text_splitter.split_text(text)
     return chunks
 
+model_name="BAAI/bge-large-en"
+model_kwargs={'device':'cpu'}
+encode_kwargs={'normalize_embeddings':True}
+embeddings=HuggingFaceBgeEmbeddings(model_name=model_name,model_kwargs=model_kwargs,encode_kwargs=encode_kwargs)
+
 def vectorstores(chunks):
-    embeddings = SentenceTransformerEmbeddings(model_name='all-MiniLM-L6-v2')
-    vector=FAISS.from_texts(chunks,embeddings)
+    #embeddings = SentenceTransformerEmbeddings(model_name='all-MiniLM-L6-v2')
+    #vector=FAISS.from_texts(chunks,embeddings)
+    url="http://localhost:6333"
+    collection_name="gpt_db1"
+    vector=Qdrant.from_documents(documents=chunks,url=url,embedding=embeddings,prefer_grpc=False,collection_name=collection_name)
     return vector
 
 def get_conversation_chain(vector):
@@ -116,38 +134,6 @@ def get_conversation_chain(vector):
     get_chat_history=lambda h:h,
     memory=memory)
     return conversation_chain
-
-def get_docx_text(docx_file):
-    doc = Document(docx_file)
-    full_text = []
-    for para in doc.paragraphs:
-        full_text.append(para.text)
-    return ' '.join(full_text)
-
-def get_txt_text(txt_file):
-    with open(txt_file, 'r') as file:
-        data = file.read().replace('\n', '')
-    return data
-
-# New function to read text from .csv files
-def get_csv_text(csv_file):
-    df = pd.read_csv(csv_file)
-    # Convert DataFrame to string
-    text = df.to_string()
-    return text
-
-# Updated function to process different file types
-# def get_file_text(file):
-#     if file.type == 'application/pdf':
-#         return get_pdf_text(file)
-#     elif file.type == 'text/plain':
-#         return get_txt_text(file)
-#     elif file.type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-#         return get_docx_text(file)
-#     elif file.type == 'text/csv':
-#         return get_csv_text(file)
-#     else:
-#         print(f"Unsupported file type: {file.type}")
 
 def speak_answer(answer):
     engine = pyttsx3.init()
@@ -187,17 +173,17 @@ for message in st.session_state['doc_messages']:
     with st.chat_message(message['role']):
         st.write(message['content'])
         
-voice_search_button = st.button("🎤", key="voice_search_button")
-current_mode = "text_input"
+#voice_search_button = st.button("🎤", key="voice_search_button")
+#current_mode = "text_input"
 
-if voice_search_button:
-    current_mode = "voice_search"
+# if voice_search_button:
+#     current_mode = "voice_search"
     
-if current_mode == "text_input":
-    user_query = st.chat_input("Enter your query here")
+# if current_mode == "text_input":
+user_query = st.chat_input("Enter your query here")
 
-elif current_mode == "voice_search":
-    user_query = get_audio_input()
+# elif current_mode == "voice_search":
+#     user_query = get_audio_input()
     
 response = ""
 if user_query:        
@@ -210,7 +196,6 @@ if user_query:
         st.markdown(user_query)
 
     with st.spinner("Generating response..."):
-        # Check if the conversation chain is initialized
         if 'conversation' in st.session_state:
             st.session_state['chat_history'] = st.session_state.get('chat_history', []) + [
                 {
@@ -218,12 +203,10 @@ if user_query:
                     "content": user_query
                 }
             ]
-            # Process the user's message using the conversation chain
             result = st.session_state.conversation({
                 "question": user_query, 
                 "chat_history": st.session_state['chat_history']})
             response = result["answer"]
-            # Append the user's question and AI's answer to chat_history
             st.session_state['chat_history'].append({
                 "role": "assistant",
                 "content": response
