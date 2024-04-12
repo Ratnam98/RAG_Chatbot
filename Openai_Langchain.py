@@ -111,14 +111,16 @@ def get_chunks(text):
     chunks=text_splitter.split_text(text)
     return chunks
 
-model_name="BAAI/bge-large-en"
-model_kwargs={'device':'cpu'}
-encode_kwargs={'normalize_embeddings':True}
-embeddings=HuggingFaceBgeEmbeddings(model_name=model_name,model_kwargs=model_kwargs,encode_kwargs=encode_kwargs)
+# model_name="BAAI/bge-large-en"
+# model_kwargs={'device':'cpu'}
+# encode_kwargs={'normalize_embeddings':True}
+# embeddings=HuggingFaceBgeEmbeddings(model_name=model_name,model_kwargs=model_kwargs,encode_kwargs=encode_kwargs)
 
 def vectorstores(chunks):
-    #embeddings = SentenceTransformerEmbeddings(model_name='all-MiniLM-L6-v2')
-    #vector=FAISS.from_texts(chunks,embeddings)
+    model_name="BAAI/bge-large-en"
+    model_kwargs={'device':'cpu'}
+    encode_kwargs={'normalize_embeddings':True}
+    embeddings=HuggingFaceBgeEmbeddings(model_name=model_name,model_kwargs=model_kwargs,encode_kwargs=encode_kwargs)
     url="http://localhost:6333"
     collection_name="gpt_db1"
     vector=Qdrant.from_documents(documents=chunks,url=url,embedding=embeddings,prefer_grpc=False,collection_name=collection_name)
