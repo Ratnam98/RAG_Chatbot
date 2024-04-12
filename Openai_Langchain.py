@@ -8,9 +8,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import RetrievalQAWithSourcesChain,RetrievalQA, ConversationalRetrievalChain
 from langchain.vectorstores import FAISS , Qdrant
 from qdrant_client import QdrantClient
-from langchain.document_loaders import PyPDFLoader 
-import speech_recognition as sr
-import pyttsx3 ,pyaudio
+from langchain.document_loaders import PyPDFLoader
 
 home_privacy = "We value and respect your privacy. To safeguard your personal details, we utilize the hashed value of your OpenAI API Key, ensuring utmost confidentiality and anonymity. Your API key facilitates AI-driven features during your session and is never retained post-visit. You can confidently fine-tune your research, assured that your information remains protected and private."
 st.set_page_config(
@@ -75,22 +73,22 @@ if "conversation" not in st.session_state:
 st.markdown(f"""## AI-Assisted Q&A from Document 📑""",unsafe_allow_html=True)
 st.write("_A tool built for AI-Powered Research Assistance or Querying Documents for Quick Information Retrieval_")
 
-def speak(answer):
-    engine=pyttsx3.init()
-    voices=engine.getProperty('voices')
-    rate=engine.getProperty('rate')
-    engine.setProperty('rate', int(rate/1.20))
-    flag=True
-    for voice in voices:
-        if 'english' in voice.languages and 'indian' in voice.name.lower():
-            engine.setProperty('voice', voice.id)
-            flag = False
-            break
+# def speak(answer):
+#     engine=pyttsx3.init()
+#     voices=engine.getProperty('voices')
+#     rate=engine.getProperty('rate')
+#     engine.setProperty('rate', int(rate/1.20))
+#     flag=True
+#     for voice in voices:
+#         if 'english' in voice.languages and 'indian' in voice.name.lower():
+#             engine.setProperty('voice', voice.id)
+#             flag = False
+#             break
 
-    if flag:
-        engine.setProperty('voice', voices[0].id)
-    engine.say(answer)
-    engine.runAndWait()
+#     if flag:
+#         engine.setProperty('voice', voices[0].id)
+#     engine.say(answer)
+#     engine.runAndWait()
     
 def get_pdf_text(pdf_docs):
     text=""
@@ -135,26 +133,26 @@ def get_conversation_chain(vector):
     memory=memory)
     return conversation_chain
 
-def speak_answer(answer):
-    engine = pyttsx3.init()
-    engine.say(answer)
-    engine.runAndWait()
+# def speak_answer(answer):
+#     engine = pyttsx3.init()
+#     engine.say(answer)
+#     engine.runAndWait()
 
-def get_audio_input():
-    recognizer=sr.Recognizer()
-    with sr.Microphone() as source:
-        st.write("Listening...")
-        recognizer.adjust_for_ambient_noise(source)
-        audio=recognizer.listen(source,timeout=5)
-        st.write("Processing Your Audio")
+# def get_audio_input():
+#     recognizer=sr.Recognizer()
+#     with sr.Microphone() as source:
+#         st.write("Listening...")
+#         recognizer.adjust_for_ambient_noise(source)
+#         audio=recognizer.listen(source,timeout=5)
+#         st.write("Processing Your Audio")
     
-    try:
-        user_query=recognizer.recognize_google(audio)
-        return user_query
-    except sr.UnknownValueError:
-        return "Sorry , I didn't understand that. Please Speak Again"
-    except sr.UnknownValueError as e:
-        return f"Speech Recoginition request failed: {str(e)}"
+#     try:
+#         user_query=recognizer.recognize_google(audio)
+#         return user_query
+#     except sr.UnknownValueError:
+#         return "Sorry , I didn't understand that. Please Speak Again"
+#     except sr.UnknownValueError as e:
+#         return f"Speech Recoginition request failed: {str(e)}"
 
 user_uploads=st.file_uploader("Upload Your File Here",accept_multiple_files=True)
 if user_uploads is not None:
@@ -215,5 +213,5 @@ if user_query:
             response = "Please upload a document first to initialize the conversation chain."
         with st.chat_message("assistant"):
             st.write(response)
-            speak(response)
+            #speak(response)
         st.session_state['doc_messages'].append({"role": "assistant", "content": response})
