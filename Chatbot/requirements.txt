@@ -1,0 +1,17 @@
+langchain==0.1.1
+langchain-community==0.0.14
+streamlit==1.37.1
+pandas
+openai
+jinja2
+pypdf2
+html2text==2020.1.16
+tiktoken==0.7.0
+sentence-transformers==3.0.1
+SpeechRecognition
+qdrant-client
+transformers==4.42.3
+unstructured==0.15.1
+pyttsx3
+#pyaudio
+rank_bm25
